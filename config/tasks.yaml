@@ -1,0 +1,78 @@
+retrieve_signals:
+  description: >
+    Research the company {company_name} (industry: {industry}, headcount: {headcount},
+    domain: {domain}) for buying signals. Execute at least one web search per signal type
+    using the query templates below.
+
+    Signal types and primary queries:
+    1. regulatory_action — "{company_name}" fine OR penalty OR enforcement OR "consent order"
+    2. headcount_growth — "{company_name}" compliance OR risk OR GRC jobs
+    3. ma_funding — "{company_name}" acquisition OR merger OR "Series B" OR funding
+    4. leadership_change — "{company_name}" appointed OR "new Chief" CCO OR CFO OR "General Counsel"
+    5. tech_procurement — "{company_name}" "compliance software" OR GRC OR regtech platform
+
+    Rules:
+    - Return the raw excerpt, URL, and date for every piece of evidence found.
+    - If no evidence exists for a type, return: NO_SIGNAL_FOUND for that type.
+    - Do NOT summarise, infer, or recommend. Return evidence only.
+    - Do NOT include sources older than 12 months from today ({current_date}).
+    - Do NOT include sources without a retrievable URL.
+
+    Output format (plain text, one block per signal found):
+    TYPE: <signal_type>
+    URL: <source_url>
+    DATE: <YYYY-MM-DD or YYYY-MM>
+    EXCERPT: <verbatim excerpt, max 60 words>
+  expected_output: >
+    A plain-text list of signal evidence blocks, each containing TYPE, URL, DATE,
+    and EXCERPT fields. Signal types with no evidence should show NO_SIGNAL_FOUND.
+  agent: signal_retriever
+
+extract_signals:
+  description: >
+    Process the raw evidence below using this workflow:
+
+    1. EXTRACT — For each evidence block, create a candidate signal with type,
+       source_url, date, and raw_excerpt (verbatim from input, max 400 characters).
+       Skip NO_SIGNAL_FOUND blocks. Never invent signals.
+
+    2. SUMMARISE — Write a factual summary from the excerpt only. State who/what/when.
+       Do not repeat the full excerpt. Do not infer or recommend.
+
+    3. VALIDATE — Apply confidence rules and hard rules below. Omit signals that fail.
+
+    JSON schema for each signal:
+
+    {{
+      "type": "regulatory_action|headcount_growth|ma_funding|leadership_change|tech_procurement",
+      "summary": "factual summary, max 280 characters",
+      "source_url": "exact URL from input",
+      "date": "YYYY-MM-DD or YYYY-MM",
+      "confidence": "High|Medium|Low",
+      "raw_excerpt": "verbatim excerpt from source, max 400 characters"
+    }}
+
+    Summary rules:
+    - Max 280 characters (hard limit — rewrite shorter if needed)
+    - Factual only; no "likely", "probably", "suggests", "implies", "may indicate"
+    - Do not repeat the full excerpt in the summary
+
+    Confidence rules:
+    - High: primary source (regulator, official company announcement), date to day
+    - Medium: reputable secondary source, date to month
+    - Low: inferred or indirect evidence, date approximate
+
+    Hard rules — violations cause the signal to be DROPPED, not downgraded:
+    - No URL in input → drop the signal entirely
+    - Summary over 280 characters → rewrite shorter or drop
+    - Summary must describe facts, not inferences or implications
+    - Do not add signals not present in the input
+    - Do not use your training data knowledge to fill gaps
+    - Drop signals older than 12 months from {current_date}
+    - raw_excerpt is required for High and Medium confidence; if missing, downgrade to Low
+
+    Return ONLY valid JSON. No preamble. No markdown fences.
+  expected_output: >
+    A valid JSON object with "signals" array and "signal_count" integer.
+    Example: {{"signals": [...], "signal_count": 3}}
+  agent: signal_extractor

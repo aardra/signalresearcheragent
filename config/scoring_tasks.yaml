@@ -1,0 +1,128 @@
+score_signals:
+  description: >
+    Score the buying signals for {company_name} ({industry}, ~{headcount}
+    employees).
+
+    ## What we sell
+
+    An AI-powered, integrated GRC (Governance, Risk & Compliance) platform
+    covering whistleblowing/incident reporting, policy management, compliance
+    training, third-party risk screening, and regulatory change management.
+    Core buyer: CCO, Chief Ethics & Compliance Officer, VP of Risk, or General
+    Counsel at large enterprises or multinationals. Target industries: Financial
+    Services, Healthcare, Energy, Manufacturing, and any heavily regulated sector.
+
+    ## Signals
+
+    {signals_text}
+
+    ## Scoring rubric (total 0-100)
+
+    1. Regulatory signal strength (0-40 points):
+       - 35-40: Primary-source regulatory action within 60 days, directly relevant
+         to GRC pain (fine, enforcement, consent order).
+       - 25-34: Regulatory action within 6 months, medium confidence or indirect
+         relevance.
+       - 10-24: Regulatory signal exists but is old (6-12 months), low confidence,
+         or only tangentially relevant.
+       - 0-9: No regulatory signal or regulatory signal is stale / irrelevant.
+
+    2. Supporting signal reinforcement (0-30 points):
+       - 25-30: Multiple supporting signals that reinforce regulatory pressure
+         (e.g. new CCO + compliance hiring + recent funding).
+       - 15-24: One strong supporting signal that complements regulatory.
+       - 5-14: Supporting signals exist but are weak or neutral.
+       - 0-4: No supporting signals, or signals contradict the regulatory case
+         (e.g. compliance layoffs).
+
+    3. ICP fit (0-20 points):
+       - 17-20: Industry is a core GRC target, headcount suggests enterprise
+         scale (500+), likely has CCO/VP Risk.
+       - 10-16: Partial ICP fit — right industry but small, or large but lightly
+         regulated industry.
+       - 0-9: Poor ICP fit — wrong industry, too small, or no evidence of
+         compliance function.
+
+    4. Signal freshness (0-10 points):
+       - 8-10: Most recent signal is within 30 days.
+       - 5-7: Most recent signal is 30-90 days old.
+       - 2-4: Most recent signal is 90-180 days old.
+       - 0-1: All signals are older than 180 days.
+
+    Return ONLY valid JSON. No preamble. No markdown fences.
+  expected_output: >
+    A JSON object with regulatory_score, supporting_score, icp_fit_score,
+    recency_score, total_score, and scoring_rationale.
+  agent: signal_scorer
+
+assign_tier:
+  description: >
+    Using the score breakdown and original signals below, assign a final sales
+    tier for {company_name}.
+
+    ## Score breakdown
+
+    {scoring_text}
+
+    ## Original signals
+
+    {signals_text}
+
+    ## Company context
+
+    Name: {company_name}
+    Industry: {industry}
+    Headcount: {headcount}
+
+    ## Tier definitions
+
+    Tier 1 — Act this week:
+      The regulatory signal is recent (< 60 days), credible, and directly
+      relevant to the pain our product solves. The company fits the ICP.
+      A decision-maker likely feels this pressure right now.
+
+    Tier 2 — Nurture, re-evaluate in 30 days:
+      There is a real signal but urgency is moderate — the event is older,
+      confidence is medium, or ICP fit is partial. Worth a warm touch but
+      not a full outreach push yet.
+
+    Tier 3 — Monitor only:
+      Signals are weak, stale, low-confidence, or the company is a poor ICP fit.
+      Flag for the next pipeline cycle. Do not initiate outreach.
+
+    ## Decision rules
+
+    1. The regulatory signal is the primary input. Weight it most heavily.
+    2. Supporting signals can move a company UP one tier if they reinforce the
+       regulatory signal (e.g. new CCO hired + regulatory fine = stronger Tier 1).
+    3. Supporting signals can move a company DOWN one tier if they contradict the
+       regulatory signal (e.g. fine + compliance team layoffs = lower urgency).
+    4. If there is no regulatory signal, default to Tier 3 unless supporting
+       signals are exceptionally strong.
+    5. ICP fit matters. A perfect signal on a company outside the ICP should not
+       reach Tier 1.
+    6. Do not invent urgency. If the evidence is thin, say so and assign Tier 3.
+
+    ## Score-to-tier guidelines
+
+    - total_score >= 70 AND regulatory_score >= 30 → strong Tier 1 candidate
+    - total_score 45-69 OR regulatory_score 15-29 → Tier 2 candidate
+    - total_score < 45 → Tier 3
+
+    These are guidelines, not hard rules. Use judgment — a score of 72 with a
+    stale regulatory signal may still be Tier 2.
+
+    ## Flag for review conditions
+
+    Set flag_for_review: true if any of the following are true:
+    - Regulatory signal confidence is Low
+    - A supporting signal directly contradicts the regulatory signal
+    - Company industry does not clearly match the ICP
+    - The regulatory signal is older than 90 days but no other signals support it
+    - You are genuinely uncertain between two tiers
+
+    Return ONLY valid JSON. No preamble. No markdown fences.
+  expected_output: >
+    A JSON object with tier, reason, primary_signal_used, confidence_in_tier,
+    flag_for_review, and flag_reason fields.
+  agent: tier_prioritiser
