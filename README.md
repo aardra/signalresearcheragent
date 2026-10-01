@@ -1,3 +1,5 @@
+<img width="1662" height="895" alt="Screenshot 2026-10-01 at 1 22 04 PM" src="https://github.com/user-attachments/assets/ecc3455a-cfb9-4242-88b2-4cf7afc5f648" />
+
 # Deal Intelligence Agent
 
 A multi-agent pipeline that discovers B2B sales leads by monitoring global events — regulatory actions, compliance hiring, M&A activity, leadership changes, and technology procurement — then scores each company's risk profile and generates personalised outreach.
