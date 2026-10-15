@@ -14,7 +14,7 @@ We recently helped a national health insurer compress audit prep for a multi-sta
 
 Alex  
 Enterprise Account Executive  
-NAVEX
+
 
 ---
 
@@ -31,4 +31,3 @@ Worth a conversation whenever your next review cycle or transformation planning 
 
 Alex  
 Enterprise Account Executive  
-NAVEX
